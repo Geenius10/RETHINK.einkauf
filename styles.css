@@ -254,3 +254,54 @@ body{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}.appbar{justify
   .appbar{padding-right:max(8px,env(safe-area-inset-right,0px))}
   .settings-top{margin-left:auto}
 }
+
+:root{--bottom-nav-h:68px}body{padding-bottom:calc(var(--bottom-nav-h) + env(safe-area-inset-bottom,0px))}.bottom-nav{position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:90!important;height:calc(var(--bottom-nav-h) + env(safe-area-inset-bottom,0px));padding:0 10px env(safe-area-inset-bottom,0px)!important;margin:0!important;border-radius:0!important;background:rgba(255,255,255,.98)!important;border-top:1px solid #dfe9e3!important;box-shadow:0 -4px 18px rgba(26,58,44,.06)!important}.bottom-nav button{height:var(--bottom-nav-h);background:transparent!important;border-radius:0!important;box-shadow:none!important}.settings-top{margin-left:auto!important;margin-right:0!important}.start-shopping-btn.primary,.planner-start{background:#c9f1df!important;color:#174a38!important;border:1px solid #9ed9bf!important}.planner-overlay{position:fixed;inset:0;z-index:130;background:rgba(21,42,33,.38);display:flex;align-items:flex-end;justify-content:center}.planner-overlay[hidden]{display:none}.planner-sheet{width:min(620px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:24px 24px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}.planner-head{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;gap:8px}.planner-head h2{margin:0}.planner-head>button{width:40px;height:40px;border:0;border-radius:12px;background:#f1f5f2}.planner-copy{font-size:.8rem;color:#6d7e74}.planner-selection{display:grid;grid-template-columns:1fr 1fr;gap:8px}.planner-list-head{display:flex;justify-content:space-between;margin:14px 2px 8px;font-size:.78rem}.planner-store-list{display:grid;gap:6px}.planner-store-card{display:grid;grid-template-columns:minmax(0,1fr) 24px;align-items:center;width:100%;padding:9px 10px;border:1px solid #e0e9e3;border-radius:12px;background:#fff;text-align:left}.planner-store-card.mine{background:#effaf5;border-color:#9fd8bb}.planner-store-card.selected{box-shadow:0 0 0 2px #bce9d4 inset}.planner-store-card b,.planner-store-card span,.planner-store-card small{display:block}.planner-store-card span{font-size:.7rem;color:#687970}.planner-store-card small{font-size:.63rem;color:#7a8981}.planner-route-preview{display:grid;gap:7px;margin-top:10px}.compact-plan-card{display:grid;grid-template-columns:1fr auto;gap:4px 8px;padding:9px 10px;border:1px solid #dfe9e3;border-radius:12px;background:#fbfdfc}.compact-plan-card small{display:block;font-size:.61rem;color:#728077}.compact-plan-card b{font-size:.82rem}.compact-plan-card button{min-height:32px;border:1px solid #d6e5dd;border-radius:9px;background:#fff;font-size:.68rem;font-weight:900}.compact-plan-card p{grid-column:1/-1;margin:0;font-size:.65rem;color:#6f7e75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.planner-start{width:100%;margin-top:12px}@media(max-width:520px){.planner-selection{grid-template-columns:1fr}}
+
+html,body{width:100%;max-width:100%;overflow-x:hidden!important;overscroll-behavior-x:none;touch-action:pan-y}
+body{position:relative}
+*{box-sizing:border-box}
+main,.screen,.card,.items,.saved-store,.planner-sheet,.editor-sheet{min-width:0;max-width:100%}
+.bottom-nav{position:fixed!important;left:0!important;right:0!important;bottom:0!important;width:100%!important;max-width:none!important;transform:none!important;margin:0!important;border-radius:0!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+.bottom-nav button{width:100%!important;min-width:0!important}
+
+:root{--bottom-nav-h:52px}
+body{padding-bottom:calc(var(--bottom-nav-h) + env(safe-area-inset-bottom,0px))!important}
+.bottom-nav{
+  height:calc(var(--bottom-nav-h) + env(safe-area-inset-bottom,0px))!important;
+  padding:0 8px env(safe-area-inset-bottom,0px)!important;
+}
+.bottom-nav button{
+  height:var(--bottom-nav-h)!important;
+  font-size:.68rem!important;
+  line-height:1!important;
+  gap:1px!important;
+  padding:3px 2px!important;
+}
+.bottom-nav button span{font-size:.9rem!important;line-height:1!important}
+.planner-overlay{overflow:hidden!important;padding:0!important}
+.planner-sheet{
+  width:100vw!important;
+  max-width:100vw!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px))!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  overscroll-behavior-x:none!important;
+  touch-action:pan-y!important;
+  border-radius:22px 22px 0 0!important;
+}
+.planner-sheet>*{min-width:0!important;max-width:100%!important}
+.planner-selection,.planner-selection .field,.planner-selection select{
+  width:100%!important;min-width:0!important;max-width:100%!important;
+}
+.planner-forward{
+  background:#c9f1df!important;
+  color:#174a38!important;
+  font-size:1rem!important;
+}
+/* v41: Mehrzeilen-Eingabe + wiederverwendbare Gruppen */
+textarea{font:inherit;width:100%;padding:12px 14px;border:1px solid #cbd7cf;border-radius:14px;background:#fff;color:var(--ink);outline:none;resize:vertical;line-height:1.4}textarea:focus{border-color:#83af94;box-shadow:0 0 0 4px #83af9422}.composer-multiline{align-items:stretch}.composer-multiline textarea{min-height:86px}.composer-multiline .primary{align-self:stretch}.groups-card{margin:0 0 14px;padding:13px 14px;border:1px solid var(--line);border-radius:18px;background:#ffffffa8}.section-inline-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.section-inline-head small{display:block;font-size:.62rem;letter-spacing:.12em;color:#829087;font-weight:900}.section-inline-head b{display:block;margin-top:2px}.quick-groups{display:flex;gap:8px;overflow-x:auto;padding-top:10px;scrollbar-width:none}.quick-groups::-webkit-scrollbar{display:none}.group-chip{flex:0 0 auto;display:flex;align-items:center;gap:7px;min-height:42px;padding:7px 8px 7px 12px;border:1px solid #dce7df;border-radius:14px;background:#f4f8f5;color:var(--green);font-weight:900}.group-chip .group-add{border:0;background:transparent;color:inherit;font-weight:900;padding:5px 0;cursor:pointer}.group-chip .group-edit{display:grid;place-items:center;width:28px;height:28px;border:0;border-radius:9px;background:#e2ede5;color:#607067;cursor:pointer}.groups-empty{font-size:.8rem;color:var(--muted);padding:4px 0}.field-hint{font-size:.72rem;color:var(--muted);line-height:1.35}.recipe-import-note{font-size:.75rem;color:#617067;margin:-3px 2px 10px}
+@media(max-width:520px){.composer-multiline{grid-template-columns:1fr}.composer-multiline .primary{width:100%}}
+
+.editor-amount-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}

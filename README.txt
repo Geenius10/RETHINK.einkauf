@@ -90,3 +90,28 @@ v37 – Mehrfach-Eingabe + Offline-Filialkatalog + UX
 - Ohne eigene Filiale bleibt Start gesperrt und führt zu Filialen.
 - Neues schlichteres App-Icon.
 - /health meldet v37.
+
+v38: Filialauswahl vor Einkaufsstart; alle Filialen auswählbar; Meine Filialen hervorgehoben und nach zuletzt verwendet sortiert; kompakte Plan-Karten; feste Bottom-Tabbar; Back-Stack mit Scrollposition; sichtbare filialspezifische Kategorien; beide Startbuttons mintgrün; neues schlichtes Icon.
+
+v39
+- horizontal scroll and zoom disabled
+- whitespace multi-item parsing hardened
+- duplicate matching normalizes quantity syntax
+- start shopping always opens planner first
+- bottom tabbar stabilized
+
+v40
+- Neue Eingabe ersetzt Menge statt zu addieren.
+- "drei mal Magerquark" => Menge 3.
+- Filialauswahl im Planner bleibt stabil und wird gespeichert.
+- Letzter App-Prozess/Bildschirm wird nach Neustart wiederhergestellt.
+- ▶ statt X im Planner.
+- Tabbar kompakter (52px).
+- Planner auf Viewportbreite festgesetzt.
+- Neues Blatt-/RETHINK-Icon ohne Einkaufswagen.
+
+
+Version 41: Mehrzeilige Rezept-/Zutatenlisten, wiederverwendbare Gruppen/Rezepte und neues App-Icon. Bestehende v40-Daten werden automatisch migriert.
+
+
+Version 42: Einzeilige Smart-Eingabe erkennt Zutatenfolgen auch ohne Kommas; Gruppen/Rezepte bleiben dauerhaft gespeichert, bearbeitbar und löschbar.

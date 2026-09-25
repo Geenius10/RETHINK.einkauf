@@ -30,14 +30,16 @@ const CATEGORY_KEYWORDS={
 "Kasse / Impulsware":["kaugummi","lotto","rubellos","impulsware","mint","bonbon kasse","kaugummis","bonbon","bonbons","minzpastillen"]
 };
 CATEGORY_KEYWORDS["Gesundheit & Nahrungsergänzung"]=["vitamin","magnesium","zink","nahrungsergänzung","pflaster","verband"];CATEGORY_KEYWORDS["Hygiene & Damenhygiene"]=["tampon","binde","slipeinlage","intimpflege","desinfektion"];CATEGORY_KEYWORDS["Kosmetik & Gesichtspflege"]=["make up","mascara","lippenstift","foundation","gesichtscreme","serum"];CATEGORY_KEYWORDS["Parfum & Düfte"]=["parfum","eau de toilette","duft"];CATEGORY_KEYWORDS["Foto & Services"]=["foto","fotopapier","passbild"];
-const ALL_CATEGORIES=[...new Set([...SUPERMARKET_ROUTE,...DRUGSTORE_ROUTE])].sort((a,b)=>a.localeCompare(b,"de",{sensitivity:"base"}));const STORAGE_KEY="rethink-einkauf-v37";const $=s=>document.querySelector(s);
+const ALL_CATEGORIES=[...new Set([...SUPERMARKET_ROUTE,...DRUGSTORE_ROUTE])].sort((a,b)=>a.localeCompare(b,"de",{sensitivity:"base"}));const STORAGE_KEY="rethink-einkauf-v41";const $=s=>document.querySelector(s);
 function norm(s){return String(s||"").toLowerCase().replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss").replace(/[^a-z0-9]+/g," ").trim()}
+function productKey(s){return norm(String(s||"").replace(/^\s*\d+\s*[x×]\s*/i,"").replace(/\s*[x×]\s*\d+\s*$/i,"").replace(/^\s*\d+\s+/,"").replace(/\s+/g," "))}
+
 function infer(name){const text=norm(name);let best="Sonstiges",score=0;for(const[cat,words]of Object.entries(CATEGORY_KEYWORDS)){let local=0;for(const raw of words){const k=norm(raw);if(!k)continue;if(text===k)local+=100;else if(text.includes(k))local+=20+k.length;else if(text.split(" ").some(w=>w.startsWith(k)||k.startsWith(w)))local+=8}if(local>score){score=local;best=cat}}return best}
 function retailerFromName(name){const n=norm(name);if(n.includes("rewe"))return"rewe";if(n.includes("nahkauf"))return"nahkauf";if(n.includes("lidl"))return"lidl";if(n.includes("aldi"))return"aldi-sued";if(n.includes("netto"))return"netto-marken-discount";if(n.includes("norma"))return"norma";if(n.includes("kaufland"))return"kaufland";if(n.includes("edeka")||n.includes("e center"))return"edeka";return null}
 function storeTemplate(s){return{id:String(s.id),name:s.name||"Filiale",address:s.address||"",group:s.group||s.chain||"",type:s.type||"supermarket",retailer:s.retailer??retailerFromName(s.name),source:s.source||"saved"}}
-function emptyState(){return{items:[],myStores:[],store:"",compareStore:"",routes:{},hiddenCategories:{},learning:{},storeCategoryOverrides:{},autoCategoryLearning:{},offers:{},compareOffers:{},prices:{},settings:{priceComparison:false},shopStage:1,shopSequence:{},routeEditStore:""}}
-function migrate(raw){const s={...emptyState(),...(raw||{})};s.items=Array.isArray(s.items)?s.items:[];s.myStores=Array.isArray(s.myStores)?s.myStores.map(storeTemplate):[];s.routes=s.routes||{};s.hiddenCategories=s.hiddenCategories||{};s.learning=s.learning||{};s.storeCategoryOverrides=s.storeCategoryOverrides||{};s.autoCategoryLearning=s.autoCategoryLearning||{};s.offers=s.offers||{};s.compareOffers=s.compareOffers||{};s.prices=s.prices||{};s.settings={priceComparison:false,...(s.settings||{})};s.shopSequence={};for(const sid of[s.store,s.compareStore]){if(sid&&!s.myStores.some(x=>x.id===sid)){const old=LEGACY_STORES.find(x=>x.id===sid);if(old)s.myStores.push(storeTemplate({...old,type:"supermarket",source:"migration"}))}}if(!s.myStores.some(x=>x.id===s.store))s.store=s.myStores[0]?.id||"";if(s.compareStore&&!s.myStores.some(x=>x.id===s.compareStore))s.compareStore="";s.items.forEach(i=>{i.mode=i.mode==="recurring"?"recurring":"once";i.checked=!!i.checked;i.cat=i.cat||infer(i.name)});return s}
-function load(){for(const k of[STORAGE_KEY,"rethink-einkauf-v36","rethink-einkauf-v35","rethink-einkauf-v34","rethink-einkauf-v33","rethink-einkauf-v32","rethink-einkauf-v31","rethink-einkauf-v30","rethink-einkauf-v29","rethink-einkauf-v28"])try{const raw=localStorage.getItem(k);if(raw){const s=migrate(JSON.parse(raw));localStorage.setItem(STORAGE_KEY,JSON.stringify(s));return s}}catch(e){}return emptyState()}
+function emptyState(){return{items:[],groups:[],myStores:[],store:"",compareStore:"",routes:{},hiddenCategories:{},learning:{},storeCategoryOverrides:{},autoCategoryLearning:{},offers:{},compareOffers:{},prices:{},settings:{priceComparison:false},recentStores:{},shopStage:1,shopSequence:{},routeEditStore:""}}
+function migrate(raw){const s={...emptyState(),...(raw||{})};s.items=Array.isArray(s.items)?s.items:[];s.groups=Array.isArray(s.groups)?s.groups:[];s.myStores=Array.isArray(s.myStores)?s.myStores.map(storeTemplate):[];s.routes=s.routes||{};s.hiddenCategories=s.hiddenCategories||{};s.learning=s.learning||{};s.storeCategoryOverrides=s.storeCategoryOverrides||{};s.autoCategoryLearning=s.autoCategoryLearning||{};s.offers=s.offers||{};s.compareOffers=s.compareOffers||{};s.prices=s.prices||{};s.settings={priceComparison:false,...(s.settings||{})};s.shopSequence={};for(const sid of[s.store,s.compareStore]){if(sid&&!s.myStores.some(x=>x.id===sid)){const old=LEGACY_STORES.find(x=>x.id===sid);if(old)s.myStores.push(storeTemplate({...old,type:"supermarket",source:"migration"}))}}if(!s.myStores.some(x=>x.id===s.store))s.store=s.myStores[0]?.id||"";if(s.compareStore&&!s.myStores.some(x=>x.id===s.compareStore))s.compareStore="";s.items.forEach(i=>{i.mode=i.mode==="recurring"?"recurring":"once";i.checked=!!i.checked;i.cat=i.cat||infer(i.name)});return s}
+function load(){for(const k of[STORAGE_KEY,"rethink-einkauf-v40","rethink-einkauf-v39","rethink-einkauf-v38","rethink-einkauf-v37","rethink-einkauf-v36","rethink-einkauf-v35","rethink-einkauf-v34","rethink-einkauf-v33","rethink-einkauf-v32","rethink-einkauf-v31","rethink-einkauf-v30","rethink-einkauf-v29","rethink-einkauf-v28"])try{const raw=localStorage.getItem(k);if(raw){const s=migrate(JSON.parse(raw));localStorage.setItem(STORAGE_KEY,JSON.stringify(s));return s}}catch(e){}return emptyState()}
 let state=load(),editing=[],offerTimer=null,pendingServiceWorker=null;function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}function esc(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]))}function getStore(id){return state.myStores.find(s=>s.id===id)||null}function currentStore(){return getStore(state.store)}function compareStore(){return getStore(state.compareStore)}function itemStoreKey(item){return norm(item.name)}
 function categoryForStore(item,storeId){return state.storeCategoryOverrides?.[storeId]?.[itemStoreKey(item)]||state.autoCategoryLearning?.[storeId]?.[itemStoreKey(item)]?.category||item.cat}
 function setCategoryForStore(item,storeId,category){state.storeCategoryOverrides[storeId]=state.storeCategoryOverrides[storeId]||{};state.storeCategoryOverrides[storeId][itemStoreKey(item)]=category}function isManualCategoryOverride(item,storeId){return !!state.storeCategoryOverrides?.[storeId]?.[itemStoreKey(item)]}
@@ -140,6 +142,10 @@ const BUILTIN_STORES=[
 {id:"cat-familienmarkt",name:"Familien Markt",chain:"Familien Markt",address:"Bahnhofstr. 2B, 95444 Bayreuth",type:"supermarket",retailer:""},
 {id:"cat-wm",name:"W & M Lebensmittel",chain:"W & M",address:"Sophian-Kolb-Str. 8, 95448 Bayreuth",type:"supermarket",retailer:""}
 ];
+function isMyStore(s){return state.myStores.some(x=>x.id===s.id)}
+function touchRecentStore(id){if(!id)return;state.recentStores=state.recentStores||{};state.recentStores[id]=Date.now()}
+function recentScore(id){return Number(state.recentStores?.[id]||0)}
+function allAvailableStores(){const seen=new Set(),all=[];for(const s of [...state.myStores,...BUILTIN_STORES]){if(seen.has(s.id))continue;seen.add(s.id);all.push(s)}return all.sort((a,b)=>{const am=isMyStore(a),bm=isMyStore(b);if(am!==bm)return bm-am;const ar=recentScore(a.id),br=recentScore(b.id);if(ar!==br)return br-ar;return a.name.localeCompare(b.name,"de",{sensitivity:"base"})})}
 function storeTypeLabel(t){return t==="drugstore"?"Drogerie":t==="beverage"?"Getränkemarkt":t==="organic"?"Bio":"Supermarkt"}
 function catalogMatches(q){
   const n=norm(q);
@@ -203,7 +209,19 @@ function offerHtml(i){
 
   return `<div class="offer-toggle-row"><button class="offer-arrow" data-toggle-offers="${id}" aria-label="Angebote ein-/ausklappen">⌄</button><span>${total} ${total===1?"Angebot":"Angebote"}${groups.length>1?" · 2 Filialen":""}</span></div><div id="${id}" class="offer-list more-offers" hidden>${rows}</div>`;
 }
-function openCategoryPicker(i){const o=document.createElement("div"),main=currentStore(),second=compareStore(),inShop=!!document.querySelector("#shopScreen.active"),contextStore=inShop?(state.shopStage===2&&second?second:main):main;let mode=contextStore?"store":"global";const manual=contextStore?state.storeCategoryOverrides?.[contextStore.id]?.[itemStoreKey(i)]:null,auto=contextStore?state.autoCategoryLearning?.[contextStore.id]?.[itemStoreKey(i)]?.category:null,current=contextStore?categoryForStore(i,contextStore.id):i.cat;o.className="category-picker-overlay";o.innerHTML=`<div class="category-picker-sheet"><div class="category-picker-head"><b>Kategorie ändern</b><button class="category-picker-close">×</button></div>${contextStore?`<div class="category-context"><small>Platzierung in</small><b>${esc(contextStore.name)}</b><span>${esc(contextStore.address)}</span>${manual?`<em>Manuell: ${esc(manual)}</em>`:auto?`<em>Automatisch gelernt: ${esc(auto)}</em>`:""}</div>`:""}<div class="category-picker-mode">${contextStore?`<button data-cat-mode="store" class="selected">Nur diese Filiale</button>`:""}<button data-cat-mode="global" class="${contextStore?"":"selected"}">Globaler Standard</button></div>${contextStore&&manual?`<button class="clear-category-override" data-clear-override>Manuelle Platzierung entfernen · wieder lernen</button>`:""}<div class="category-picker-list">${ALL_CATEGORIES.map(c=>`<button class="category-choice ${c===current?"selected":""}" data-choice="${esc(c)}">${esc(c)}</button>`).join("")}</div></div>`;document.body.appendChild(o);const refresh=()=>o.querySelectorAll("[data-cat-mode]").forEach(b=>b.classList.toggle("selected",b.dataset.catMode===mode));o.querySelectorAll("[data-cat-mode]").forEach(b=>b.onclick=()=>{mode=b.dataset.catMode;refresh()});o.querySelector("[data-clear-override]")?.addEventListener("click",()=>{delete state.storeCategoryOverrides?.[contextStore.id]?.[itemStoreKey(i)];save();o.remove();render()});const close=()=>o.remove();o.onclick=e=>{if(e.target===o)close()};o.querySelector(".category-picker-close").onclick=close;o.querySelectorAll("[data-choice]").forEach(b=>b.onclick=()=>{if(mode==="store"&&contextStore)setCategoryForStore(i,contextStore.id,b.dataset.choice);else i.cat=b.dataset.choice;save();close();render()})}function itemNode(i,shopping=false){const e=document.createElement("div"),activeStoreId=shopping?(state.shopStage===2&&state.compareStore?state.compareStore:state.store):state.store,shownCategory=shopping&&activeStoreId?categoryForStore(i,activeStoreId):i.cat;e.className="item"+(i.checked?" checked":"")+((offersFor(i).length||compareOffersFor(i).length)?" offer":"");e.innerHTML=`<input class="check" data-id="${i.id}" type="checkbox" ${i.checked?"checked":""}><div><button class="item-name-button" data-edit-item="${i.id}">${esc(i.name)}${(Number(i.qty)||1)>1?` <span class="item-qty">×${Number(i.qty)}</span>`:""}</button><div class="meta"><button class="tag ${i.mode}" data-mode="${i.id}">${i.mode==="recurring"?"dauerhaft":"einmalig"}</button><button class="tag category-tag" data-category-id="${i.id}">${esc(shownCategory)}</button></div>${offerHtml(i)}${priceHtml(i)}</div>${shopping?"":`<button class="delete" data-delete="${i.id}">×</button>`}`;return e}function bindList(box,shopping=false){box.querySelectorAll("[data-edit-item]").forEach(b=>b.onclick=e=>{e.stopPropagation();openItemEditor(b.dataset.editItem)});box.querySelectorAll(".check").forEach(b=>b.onchange=e=>{const i=state.items.find(x=>x.id===e.target.dataset.id);if(!i)return;i.checked=e.target.checked;if(shopping&&i.checked)recordCategory(i);save();render()});box.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{const i=state.items.find(x=>x.id===b.dataset.mode);if(i){i.mode=i.mode==="once"?"recurring":"once";save();render()}});box.querySelectorAll("[data-category-id]").forEach(b=>b.onclick=()=>{const i=state.items.find(x=>x.id===b.dataset.categoryId);if(i)openCategoryPicker(i)});box.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>{state.items=state.items.filter(i=>i.id!==b.dataset.delete);save();render();scheduleOffers()});box.querySelectorAll("[data-toggle-offers]").forEach(b=>b.onclick=()=>{const t=document.getElementById(b.dataset.toggleOffers);if(t){const open=t.hidden;t.hidden=!open;b.classList.toggle("open",open)}});box.querySelectorAll("[data-price-store]").forEach(b=>b.onclick=()=>{if(!state.settings.priceComparison)return;const i=state.items.find(x=>x.id===b.dataset.priceItem);if(!i)return;const old=knownPrice(b.dataset.priceStore,i),raw=prompt("Preis für "+i.name+" merken (z. B. 1,29)",old?String(old.price).replace(".",","):"");if(raw===null)return;const n=euro(raw);if(n===null)return alert("Bitte gültigen Preis eingeben.");state.prices[priceKey(b.dataset.priceStore,i)]={price:n,date:new Date().toISOString().slice(0,10)};save();render()})}
+function openCategoryPicker(i){const o=document.createElement("div"),main=currentStore(),second=compareStore(),inShop=!!document.querySelector("#shopScreen.active"),contextStore=inShop?(state.shopStage===2&&second?second:main):main;let mode=contextStore?"store":"global";const manual=contextStore?state.storeCategoryOverrides?.[contextStore.id]?.[itemStoreKey(i)]:null,auto=contextStore?state.autoCategoryLearning?.[contextStore.id]?.[itemStoreKey(i)]?.category:null,current=contextStore?categoryForStore(i,contextStore.id):i.cat;o.className="category-picker-overlay";o.innerHTML=`<div class="category-picker-sheet"><div class="category-picker-head"><b>Kategorie ändern</b><button class="category-picker-close">×</button></div>${contextStore?`<div class="category-context"><small>Platzierung in</small><b>${esc(contextStore.name)}</b><span>${esc(contextStore.address)}</span>${manual?`<em>Manuell: ${esc(manual)}</em>`:auto?`<em>Automatisch gelernt: ${esc(auto)}</em>`:""}</div>`:""}<div class="category-picker-mode">${contextStore?`<button data-cat-mode="store" class="selected">Nur diese Filiale</button>`:""}<button data-cat-mode="global" class="${contextStore?"":"selected"}">Globaler Standard</button></div>${contextStore&&manual?`<button class="clear-category-override" data-clear-override>Manuelle Platzierung entfernen · wieder lernen</button>`:""}<div class="category-picker-list">${ALL_CATEGORIES.map(c=>`<button class="category-choice ${c===current?"selected":""}" data-choice="${esc(c)}">${esc(c)}</button>`).join("")}</div></div>`;document.body.appendChild(o);const refresh=()=>o.querySelectorAll("[data-cat-mode]").forEach(b=>b.classList.toggle("selected",b.dataset.catMode===mode));o.querySelectorAll("[data-cat-mode]").forEach(b=>b.onclick=()=>{mode=b.dataset.catMode;refresh()});o.querySelector("[data-clear-override]")?.addEventListener("click",()=>{delete state.storeCategoryOverrides?.[contextStore.id]?.[itemStoreKey(i)];save();o.remove();render()});const close=()=>o.remove();o.onclick=e=>{if(e.target===o)close()};o.querySelector(".category-picker-close").onclick=close;o.querySelectorAll("[data-choice]").forEach(b=>b.onclick=()=>{if(mode==="store"&&contextStore)setCategoryForStore(i,contextStore.id,b.dataset.choice);else i.cat=b.dataset.choice;save();close();render()})}function itemNode(i,shopping=false){const e=document.createElement("div"),activeStoreId=shopping?(state.shopStage===2&&state.compareStore?state.compareStore:state.store):state.store,shownCategory=activeStoreId?categoryForStore(i,activeStoreId):i.cat;e.className="item"+(i.checked?" checked":"")+((offersFor(i).length||compareOffersFor(i).length)?" offer":"");e.innerHTML=`<input class="check" data-id="${i.id}" type="checkbox" ${i.checked?"checked":""}><div><button class="item-name-button" data-edit-item="${i.id}">${esc(i.name)}${((Number(i.qty)||1)!==1||i.unit)?` <span class="item-qty">${i.unit?`${Number(i.qty).toLocaleString("de-DE")} ${esc(i.unit)}`:`×${Number(i.qty)}`}</span>`:""}</button><div class="meta"><button class="tag ${i.mode}" data-mode="${i.id}">${i.mode==="recurring"?"dauerhaft":"einmalig"}</button><button class="tag category-tag" data-category-id="${i.id}">${esc(shownCategory)}</button></div>${offerHtml(i)}${priceHtml(i)}</div>${shopping?"":`<button class="delete" data-delete="${i.id}">×</button>`}`;return e}function bindList(box,shopping=false){box.querySelectorAll("[data-edit-item]").forEach(b=>b.onclick=e=>{e.stopPropagation();openItemEditor(b.dataset.editItem)});box.querySelectorAll(".check").forEach(b=>b.onchange=e=>{const i=state.items.find(x=>x.id===e.target.dataset.id);if(!i)return;i.checked=e.target.checked;if(shopping&&i.checked)recordCategory(i);save();render()});box.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>{const i=state.items.find(x=>x.id===b.dataset.mode);if(i){i.mode=i.mode==="once"?"recurring":"once";save();render()}});box.querySelectorAll("[data-category-id]").forEach(b=>b.onclick=()=>{const i=state.items.find(x=>x.id===b.dataset.categoryId);if(i)openCategoryPicker(i)});box.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>{state.items=state.items.filter(i=>i.id!==b.dataset.delete);save();render();scheduleOffers()});box.querySelectorAll("[data-toggle-offers]").forEach(b=>b.onclick=()=>{const t=document.getElementById(b.dataset.toggleOffers);if(t){const open=t.hidden;t.hidden=!open;b.classList.toggle("open",open)}});box.querySelectorAll("[data-price-store]").forEach(b=>b.onclick=()=>{if(!state.settings.priceComparison)return;const i=state.items.find(x=>x.id===b.dataset.priceItem);if(!i)return;const old=knownPrice(b.dataset.priceStore,i),raw=prompt("Preis für "+i.name+" merken (z. B. 1,29)",old?String(old.price).replace(".",","):"");if(raw===null)return;const n=euro(raw);if(n===null)return alert("Bitte gültigen Preis eingeben.");state.prices[priceKey(b.dataset.priceStore,i)]={price:n,date:new Date().toISOString().slice(0,10)};save();render()})}
+let editingGroupId=null;
+function groupItemText(g){return (g.items||[]).map(p=>`${p.qty&&p.qty!==1?p.qty+" ":""}${p.unit?p.unit+" ":""}${p.name}`).join("\n")}
+function renderGroups(){
+  const box=$("#quickGroups");if(!box)return;const groups=state.groups||[];
+  box.innerHTML=groups.length?groups.map(g=>`<div class="group-chip"><button class="group-add" data-use-group="${g.id}">＋ ${esc(g.name)} <small>(${g.items.length})</small></button><button class="group-edit" data-edit-group="${g.id}" aria-label="Gruppe bearbeiten">•••</button></div>`).join(""):`<span class="groups-empty">Noch keine Gruppe – speichere z. B. ein Rezept oder deinen Wocheneinkauf.</span>`;
+  box.querySelectorAll("[data-use-group]").forEach(b=>b.onclick=()=>activateGroup(b.dataset.useGroup));
+  box.querySelectorAll("[data-edit-group]").forEach(b=>b.onclick=()=>openGroupEditor(b.dataset.editGroup));
+}
+function activateGroup(id){const g=state.groups.find(x=>x.id===id);if(!g)return;(g.items||[]).forEach(p=>{const ex=state.items.find(x=>productKey(x.name)===productKey(p.name));if(ex){ex.checked=false;ex.qty=p.qty||1;ex.unit=p.unit||ex.unit||""}else state.items.push({id:crypto.randomUUID(),name:p.name,cat:p.cat||infer(p.name),mode:"once",checked:false,qty:p.qty||1,unit:p.unit||""})});save();render();scheduleOffers()}
+function openGroupEditor(id=null){editingGroupId=id;const g=id?state.groups.find(x=>x.id===id):null;$("#groupEditorTitle").textContent=g?"Gruppe bearbeiten":"Neue Gruppe";$("#groupName").value=g?.name||"";$("#groupItems").value=g?groupItemText(g):"";$("#groupDeleteBtn").hidden=!g;$("#groupEditor").hidden=false;setTimeout(()=>$("#groupName").focus(),20)}
+function closeGroupEditor(){$("#groupEditor").hidden=true;editingGroupId=null}
+function saveGroupEditor(){const name=$("#groupName").value.trim(),parsed=smartSplitInput($("#groupItems").value);if(!name)return alert("Bitte einen Namen für die Gruppe eingeben.");if(!parsed.length)return alert("Bitte mindestens ein Lebensmittel eingeben.");const items=parsed.map(p=>({name:p.name[0].toUpperCase()+p.name.slice(1),qty:p.qty||1,unit:p.unit||"",cat:infer(p.name)}));if(editingGroupId){const g=state.groups.find(x=>x.id===editingGroupId);if(g){g.name=name;g.items=items}}else state.groups.push({id:crypto.randomUUID(),name,items});save();closeGroupEditor();renderGroups()}
 function renderList(){
   const needed=$("#items"),stock=$("#stockItems");
   needed.innerHTML="";stock.innerHTML="";
@@ -227,92 +245,78 @@ function renderPlan(){const a=$("#storeSelect"),b=$("#compareStoreSelect"),opts=
     $("#activeStoresCard").hidden=!state.myStores.length;
   }
 }
-function renderMyStores(){const b=$("#myStores");if(!$("#storeSearchInput")?.value)renderStoreSearchResults(BUILTIN_STORES);b.innerHTML=state.myStores.length?state.myStores.map(s=>`<div class="saved-store"><div><b>${esc(s.name)}</b><span>${esc(s.address)}</span><small>${storeTypeLabel(s.type)} · ${learnStatus(s.id)}</small></div><div class="store-actions"><button class="mini" data-edit-store-route="${s.id}">Laufweg</button><button class="remove-store" data-remove-store="${s.id}">×</button></div></div>`).join(""):`<div class="empty compact"><b>Noch keine Filiale gespeichert</b><span>Suche unten nach deinem ersten Markt.</span></div>`;b.querySelectorAll("[data-edit-store-route]").forEach(x=>x.onclick=()=>{state.routeEditStore=x.dataset.editStoreRoute;editing=[...route(state.routeEditStore)];renderRouteEditor();show("route","Laufweg anpassen")});b.querySelectorAll("[data-remove-store]").forEach(x=>x.onclick=()=>{const id=x.dataset.removeStore;if(!confirm("Filiale aus Meine Filialen entfernen?"))return;state.myStores=state.myStores.filter(s=>s.id!==id);if(state.store===id)state.store=state.myStores[0]?.id||"";if(state.compareStore===id)state.compareStore="";save();render()})}function render(){renderList();renderShop();renderPlan();renderMyStores()}function show(screen,title){document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));$("#"+screen+"Screen")?.classList.add("active");$("#screenTitle").textContent=title;document.querySelectorAll("[data-nav]").forEach(b=>b.classList.toggle("nav-active",b.dataset.nav===screen));window.scrollTo({top:0,behavior:"smooth"})}
+function renderMyStores(){const b=$("#myStores");if(!$("#storeSearchInput")?.value)renderStoreSearchResults(BUILTIN_STORES);b.innerHTML=state.myStores.length?[...state.myStores].sort((a,b)=>recentScore(b.id)-recentScore(a.id)||a.name.localeCompare(b.name,"de",{sensitivity:"base"})).map(s=>`<div class="saved-store"><div><b>${esc(s.name)}</b><span>${esc(s.address)}</span><small>${storeTypeLabel(s.type)} · ${learnStatus(s.id)}</small></div><div class="store-actions"><button class="mini" data-edit-store-route="${s.id}">Laufweg</button><button class="remove-store" data-remove-store="${s.id}">×</button></div></div>`).join(""):`<div class="empty compact"><b>Noch keine Filiale gespeichert</b><span>Suche unten nach deinem ersten Markt.</span></div>`;b.querySelectorAll("[data-edit-store-route]").forEach(x=>x.onclick=()=>{state.routeEditStore=x.dataset.editStoreRoute;editing=[...route(state.routeEditStore)];renderRouteEditor();show("route","Laufweg anpassen")});b.querySelectorAll("[data-remove-store]").forEach(x=>x.onclick=()=>{const id=x.dataset.removeStore;if(!confirm("Filiale aus Meine Filialen entfernen?"))return;state.myStores=state.myStores.filter(s=>s.id!==id);if(state.store===id)state.store=state.myStores[0]?.id||"";if(state.compareStore===id)state.compareStore="";save();render()})}function render(){renderList();renderGroups();renderShop();renderPlan();renderMyStores()}const navHistory=[];let currentScreen="list";
+function show(screen,title,opts={}){
+  const current=document.querySelector(".screen.active")?.id?.replace("Screen","")||currentScreen;
+  if(!opts.noHistory&&current!==screen)navHistory.push({screen:current,title:$("#screenTitle")?.textContent||"",scrollY:window.scrollY});
+  document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
+  $("#"+screen+"Screen")?.classList.add("active");
+  currentScreen=screen;
+  $("#screenTitle").textContent=title;
+  document.querySelectorAll("[data-nav]").forEach(b=>b.classList.toggle("nav-active",b.dataset.nav===screen));
+  state.uiSession=state.uiSession||{};
+  state.uiSession.screen=screen;
+  state.uiSession.scrollY=opts.restoreScroll??0;
+  save();
+  requestAnimationFrame(()=>window.scrollTo(0,opts.restoreScroll??0));
+}
+function goBack(){const p=navHistory.pop();if(!p)return show("list","Einkaufsliste",{noHistory:true,restoreScroll:0});show(p.screen,p.title,{noHistory:true,restoreScroll:p.scrollY||0})}
 const NUMBER_WORDS={ein:1,eine:1,einen:1,einer:1,eins:1,zwei:2,drei:3,vier:4,fuenf:5,fünf:5,sechs:6,sieben:7,acht:8,neun:9,zehn:10,zwoelf:12,zwölf:12};
-const UNIT_WORDS=["flasche","flaschen","packung","packungen","paket","pakete","dose","dosen","becher","glas","glaeser","gläser","kiste","kisten","stueck","stück","stuecke","stücke","kg","kilo","gramm","g","liter","l"];
+const UNIT_WORDS=["flasche","flaschen","packung","packungen","paket","pakete","dose","dosen","becher","glas","glaeser","gläser","kiste","kisten","stueck","stück","stuecke","stücke","kg","kilo","gramm","g","mg","würfel","wuerfel","pck","päckchen","paeckchen","liter","l","ml","cl","el","essloeffel","esslöffel","tl","teeloeffel","teelöffel","prise","prisen","bund","kopf","zehe","zehen","scheibe","scheiben","zweig","zweige"];
 const FILLER_PREFIXES=[
   "ich brauche noch","ich brauche","wir brauchen noch","wir brauchen","bitte noch","bitte",
   "kauf bitte","kaufe bitte","hol bitte","hole bitte","noch"
 ];
 
 function cleanShoppingPhrase(s){
-  let x=String(s||"").trim().replace(/[.!?]+$/,"").trim();
+  let x=String(s||"").trim()
+    .replace(/^\s*(?:[-–—•●▪◦*]+|\d+[.)])\s*/,"")
+    .replace(/\s+(?:nach geschmack|zum abschmecken|optional)$/i,"")
+    .replace(/[.!?]+$/," ").trim();
   const low=norm(x);
-  for(const p of FILLER_PREFIXES){
-    if(low.startsWith(norm(p)+" ")){x=x.slice(p.length).trim();break;}
-  }
+  for(const p of FILLER_PREFIXES){if(low.startsWith(norm(p)+" ")){x=x.slice(p.length).trim();break;}}
   return x.replace(/^(und|sowie|plus)\s+/i,"").trim();
 }
+function parseAmount(v){
+  const t=String(v||"").trim().replace(",",".");
+  if(/^\d+\/\d+$/.test(t)){const[a,b]=t.split("/").map(Number);return b?a/b:1}
+  const n=Number(t);return Number.isFinite(n)&&n>0?n:1;
+}
 function parseQuantity(text){
-  let x=text.trim(),qty=1,unit="";
-  let m=x.match(/^(\d+)\s*[x×]\s+(.+)$/i)||x.match(/^(\d+)\s*[x×]\s*(.+)$/i);
-  if(m){qty=Number(m[1]);x=m[2].trim();}
+  let x=cleanShoppingPhrase(text),qty=1,unit="";
+  let m=x.match(/^(\d+(?:[.,]\d+)?|\d+\/\d+)\s*[x×]\s*(.+)$/i);
+  if(m){qty=parseAmount(m[1]);x=m[2].trim();}
   else{
-    m=x.match(/^(\d+)\s+(.+)$/);
-    if(m){qty=Number(m[1]);x=m[2].trim();}
-    else{
-      const first=x.split(/\s+/)[0].toLowerCase(),n=NUMBER_WORDS[first];
-      if(n){qty=n;x=x.split(/\s+/).slice(1).join(" ").trim();}
-    }
+    m=x.match(/^(\d+(?:[.,]\d+)?|\d+\/\d+)\s+(.+)$/);
+    if(m){qty=parseAmount(m[1]);x=m[2].trim();const parts=x.split(/\s+/);if(parts.length>1&&UNIT_WORDS.includes(norm(parts[0]))){unit=parts.shift();x=parts.join(" ").trim();}}
+    else{const first=x.split(/\s+/)[0].toLowerCase(),n=NUMBER_WORDS[first];if(n){qty=n;x=x.split(/\s+/).slice(1).join(" ").trim();}}
   }
-  if(qty===1){
-    const suffix=x.match(/^(.+?)\s*[x×]\s*(\d+)$/i)||x.match(/^(.+?)\s+(\d+)\s*[x×]$/i);
-    if(suffix){x=suffix[1].trim();qty=Number(suffix[2]);}
-  }
-  const parts=x.split(/\s+/);
-  if(parts.length>1 && UNIT_WORDS.includes(parts[0].toLowerCase())){
-    unit=parts.shift();x=parts.join(" ").trim();
-  }
-  return {name:x,qty:Math.max(1,qty||1),unit};
+  x=x.replace(/^mal\s+/i,"").trim();
+  if(qty===1){const suffix=x.match(/^(.+?)\s*[x×]\s*(\d+(?:[.,]\d+)?)$/i);if(suffix){x=suffix[1].trim();qty=parseAmount(suffix[2]);}}
+  if(!unit){const parts=x.split(/\s+/);if(parts.length>1&&UNIT_WORDS.includes(norm(parts[0]))){unit=parts.shift();x=parts.join(" ").trim();}}
+  x=x.replace(/^ca\.?\s+/i,"").replace(/\s*\([^)]*\)\s*$/," ").trim();
+  return {name:x,qty:Math.max(.01,qty||1),unit};
 }
-
-const KNOWN_PRODUCT_PHRASES=(()=>{
-  const set=new Set();
-  Object.values(CATEGORY_KEYWORDS).flat().forEach(x=>set.add(norm(x)));
-  return [...set].sort((a,b)=>b.split(/\s+/).length-a.split(/\s+/).length||b.length-a.length);
-})();
-function knownProductAt(tokens,start){
-  const max=Math.min(4,tokens.length-start);
-  for(let len=max;len>=1;len--){
-    const phrase=tokens.slice(start,start+len).join(" ");
-    if(KNOWN_PRODUCT_PHRASES.includes(norm(phrase)))return {name:phrase,len};
-  }
-  return null;
-}
+const KNOWN_PRODUCT_PHRASES=(()=>{const set=new Set();Object.values(CATEGORY_KEYWORDS).flat().forEach(x=>set.add(norm(x)));return [...set].sort((a,b)=>b.split(/\s+/).length-a.split(/\s+/).length||b.length-a.length)})();
+function knownProductAt(tokens,start){const max=Math.min(4,tokens.length-start);for(let len=max;len>=1;len--){const phrase=tokens.slice(start,start+len).join(" ");if(KNOWN_PRODUCT_PHRASES.includes(norm(phrase)))return{name:phrase,len}}return null}
 function segmentKnownProducts(raw){
-  const cleaned=cleanShoppingPhrase(raw).replace(/[;,\n]+/g," ").trim();
-  if(!cleaned)return[];
-  const tokens=cleaned.match(/\d+\s*[x×]?|[x×]\s*\d+|[\p{L}ÄÖÜäöüß-]+/gu)||[];
-  const out=[];let i=0,unmatched=0;
-  while(i<tokens.length){
-    let qty=1,unit="";
-    let t=norm(tokens[i]).replace(/\s/g,"");
-    let m=t.match(/^(\d+)[x×]$/);
-    if(m){qty=Number(m[1]);i++;}
-    else if(/^\d+$/.test(t)){qty=Number(t);i++;}
-    else if(NUMBER_WORDS[t]){qty=NUMBER_WORDS[t];i++;}
-    if(i<tokens.length && UNIT_WORDS.includes(norm(tokens[i]))){unit=tokens[i];i++;}
-    const hit=knownProductAt(tokens,i);
-    if(!hit){unmatched++;i++;continue;}
-    i+=hit.len;
-    if(i<tokens.length){
-      const sx=norm(tokens[i]).replace(/\s/g,"").match(/^[x×](\d+)$/);
-      if(sx){qty=Number(sx[1]);i++;}
-    }
-    out.push({name:hit.name,qty:Math.max(1,qty||1),unit});
-  }
-  return out.length>=2 && unmatched<=1 ? out : [];
+  const cleaned=cleanShoppingPhrase(raw).replace(/[;,\n]+/g," ").trim();if(!cleaned)return[];
+  const tokens=cleaned.match(/[x×]\s*\d+|\d+\s*[x×]?|[\p{L}ÄÖÜäöüß-]+/gu)||[];const out=[];let i=0;
+  while(i<tokens.length){let qty=1,unit="",t=norm(tokens[i]).replace(/\s/g,"");let m=t.match(/^(\d+)[x×]$/);if(m){qty=Number(m[1]);i++}else if(/^\d+$/.test(t)){qty=Number(t);i++}else if(NUMBER_WORDS[t]){qty=NUMBER_WORDS[t];i++}if(i<tokens.length&&UNIT_WORDS.includes(norm(tokens[i]))){unit=tokens[i];i++}let hit=knownProductAt(tokens,i);if(!hit){let j=i+1;while(j<tokens.length){const nt=norm(tokens[j]).replace(/\s/g,"");if(/^[x×]\d+$/.test(nt)||/^\d+[x×]?$/.test(nt)||NUMBER_WORDS[nt]||knownProductAt(tokens,j))break;j++}const phrase=tokens.slice(i,j).join(" ").trim();if(phrase)hit={name:phrase,len:j-i}}if(!hit){i++;continue}i+=hit.len;if(i<tokens.length){const sx=norm(tokens[i]).replace(/\s/g,"").match(/^[x×](\d+)$/);if(sx){qty=Number(sx[1]);i++}}out.push({name:hit.name,qty:Math.max(1,qty||1),unit})}
+  return out.length>=2?out:[];
 }
-
+function looksLikeHeading(line){const x=cleanShoppingPhrase(line);return !/\d/.test(x)&&/^(zutaten|für .*|belag|teig|sauce|soße|dressing|garnitur|optional)\s*:?$/i.test(x)}
 function smartSplitInput(raw){
-  let x=String(raw||"").replace(/\r/g,"").trim();
-  if(!x)return[];
+  let x=String(raw||"").replace(/\r/g,"").trim();if(!x)return[];
+  const lines=x.split(/\n+/).map(cleanShoppingPhrase).filter(Boolean).filter(line=>!looksLikeHeading(line));
+  if(lines.length>1){
+    const parsed=[];for(const line of lines){const sub=line.split(/\s*[;|]\s*/).filter(Boolean);for(const part of sub){const p=parseQuantity(part);if(p.name)parsed.push(p)}}
+    if(parsed.length)return parsed;
+  }
   const explicit=x.replace(/\s+(?:und|sowie|plus)\s+/gi,"|||").replace(/\s*\+\s*/g,"|||");
   const chunks=explicit.split(/[,;\n]|\|\|\|/).map(cleanShoppingPhrase).filter(Boolean);
-  if(chunks.length>1)return chunks.map(parseQuantity).filter(x=>x.name);
-  const segmented=segmentKnownProducts(x);
-  if(segmented.length>1)return segmented;
-  return chunks.map(parseQuantity).filter(x=>x.name);
+  if(chunks.length>1)return chunks.flatMap(chunk=>{const s=segmentKnownProducts(chunk);return s.length>1?s:[parseQuantity(chunk)]}).filter(x=>x.name);
+  const segmented=segmentKnownProducts(x);return segmented.length>1?segmented:chunks.map(parseQuantity).filter(x=>x.name);
 }
 function addItems(){
   const i=$("#itemInput"),raw=i.value.trim();if(!raw)return;
@@ -320,10 +324,10 @@ function addItems(){
   if(!parsed.length)return;
   parsed.forEach(p=>{
     const name=p.name.trim();
-    const ex=state.items.find(x=>norm(x.name)===norm(name));
+    const ex=state.items.find(x=>productKey(x.name)===productKey(name));
     if(ex){
       ex.checked=false;
-      ex.qty=Math.max(1,(Number(ex.qty)||1)+(p.qty>1?p.qty:0));
+      ex.qty=Math.max(1,Number(p.qty)||1);
       if(p.unit)ex.unit=p.unit;
     }else{
       state.items.push({id:crypto.randomUUID(),name:name[0].toUpperCase()+name.slice(1),cat:infer(name),mode:"once",checked:false,qty:p.qty||1,unit:p.unit||""});
@@ -336,7 +340,7 @@ function openItemEditor(id){
   const item=state.items.find(x=>x.id===id);if(!item)return;
   editingItemId=id;
   $("#editorName").value=item.name;
-  $("#editorQty").value=Math.max(1,Number(item.qty)||1);
+  $("#editorQty").value=Math.max(.01,Number(item.qty)||1);$("#editorUnit").value=item.unit||"";
   $("#editorRecurring").checked=item.mode==="recurring";
   $("#editorCategory").innerHTML=ALL_CATEGORIES.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");
   $("#editorCategory").value=item.cat;
@@ -347,7 +351,7 @@ function saveItemEditor(){
   const item=state.items.find(x=>x.id===editingItemId);if(!item)return closeItemEditor();
   const name=$("#editorName").value.trim();if(!name)return alert("Bitte einen Produktnamen eingeben.");
   item.name=name[0].toUpperCase()+name.slice(1);
-  item.qty=Math.max(1,Number($("#editorQty").value)||1);
+  item.qty=Math.max(.01,Number($("#editorQty").value)||1);item.unit=$("#editorUnit").value.trim();
   item.cat=$("#editorCategory").value||infer(item.name);
   item.mode=$("#editorRecurring").checked?"recurring":"once";
   save();closeItemEditor();render();scheduleOffers();
@@ -443,24 +447,118 @@ async function searchStores(){
     $("#storeSearchState").textContent=localCount?`${localCount} Filialen im Offline-Katalog · Online gerade nicht erreichbar`:"Keine Filiale im festen Katalog gefunden.";
   }
 }
-function startShopping(){
-  if(!state.myStores.length||!currentStore()){
-    $("#storeStartNotice").hidden=false;
-    $("#storeSearchState").textContent="Lege zuerst mindestens eine Filiale an.";
-    show("stores","Filialen");
-    return;
+function compactRouteForStore(id){const wanted=new Set(state.items.filter(i=>!i.checked).map(i=>categoryForStore(i,id)));return route(id).filter(c=>wanted.has(c))}
+function renderShoppingPlanner(){
+  const stores=allAvailableStores(),main=$("#plannerMainStore"),second=$("#plannerSecondStore");
+  state.uiSession=state.uiSession||{screen:"list",scrollY:0,plannerOpen:false,plannerMain:"",plannerSecond:""};
+  const session=state.uiSession;
+  if(!session.plannerMain)session.plannerMain=state.store||"";
+  if(session.plannerSecond===undefined||session.plannerSecond===null)session.plannerSecond=state.compareStore||"";
+
+  const opt=s=>`<option value="${s.id}">${isMyStore(s)?"★ ":""}${esc(s.name)} · ${esc(s.address)}</option>`;
+  main.innerHTML=`<option value="">Filiale wählen</option>`+stores.map(opt).join("");
+  second.innerHTML=`<option value="">Keine zweite Filiale</option>`+stores.map(opt).join("");
+  main.value=stores.some(s=>s.id===session.plannerMain)?session.plannerMain:"";
+  second.value=stores.some(s=>s.id===session.plannerSecond)?session.plannerSecond:"";
+
+  $("#plannerStoreList").innerHTML=stores.map(s=>{
+    const mine=isMyStore(s),sel=s.id===main.value||s.id===second.value;
+    return `<button class="planner-store-card ${mine?"mine":""} ${sel?"selected":""}" data-planner-store="${s.id}">
+      <div><b>${mine?"★ ":""}${esc(s.name)}</b><span>${esc(s.address)}</span><small>${storeTypeLabel(s.type)}</small></div><span>›</span>
+    </button>`;
+  }).join("");
+
+  $("#plannerStoreList").querySelectorAll("[data-planner-store]").forEach(b=>b.onclick=()=>{
+    const id=b.dataset.plannerStore;
+    if(!session.plannerMain)session.plannerMain=id;
+    else if(session.plannerMain===id)session.plannerMain="";
+    else if(!session.plannerSecond)session.plannerSecond=id;
+    else if(session.plannerSecond===id)session.plannerSecond="";
+    else session.plannerMain=id;
+    save();renderShoppingPlanner();
+  });
+
+  const cards=[];
+  for(const [label,id] of [["Hauptfiliale",session.plannerMain],["Zweite Filiale",session.plannerSecond]]){
+    if(!id)continue;
+    const s=stores.find(x=>x.id===id),cats=compactRouteForStore(id);
+    cards.push(`<div class="compact-plan-card"><div><small>${label}</small><b>${esc(s?.name||"")}</b></div>
+      <button data-edit-plan-route="${id}">Laufweg</button>
+      <p>${cats.length?cats.slice(0,3).map(esc).join(" · "):"Keine offenen Kategorien"}${cats.length>3?` · +${cats.length-3}`:""}</p></div>`);
   }
-  if(!state.items.some(i=>!i.checked))return alert("Aktuell ist kein Produkt für den Einkauf markiert.");
-  state.shopStage=1;state.shopSequence={};save();show("shop","Einkauf");render();
+  $("#plannerRoutePreview").innerHTML=cards.join("");
+  $("#plannerRoutePreview").querySelectorAll("[data-edit-plan-route]").forEach(b=>b.onclick=()=>{
+    state.routeEditStore=b.dataset.editPlanRoute;
+    editing=[...route(state.routeEditStore)];
+    state.uiSession.plannerOpen=false;save();
+    $("#shoppingPlanner").hidden=true;
+    renderRouteEditor();
+    show("route","Laufweg anpassen");
+  });
 }
+function openShoppingPlanner(){
+  if(!state.items.some(i=>!i.checked))return alert("Aktuell ist kein Produkt für den Einkauf markiert.");
+  state.uiSession=state.uiSession||{screen:"list",scrollY:0,plannerOpen:false,plannerMain:"",plannerSecond:""};
+  state.uiSession.plannerOpen=true;
+  if(!state.uiSession.plannerMain)state.uiSession.plannerMain=state.store||"";
+  if(state.uiSession.plannerSecond===undefined)state.uiSession.plannerSecond=state.compareStore||"";
+  save();
+  renderShoppingPlanner();
+  $("#shoppingPlanner").hidden=false;
+}
+function closeShoppingPlanner(){
+  $("#shoppingPlanner").hidden=true;
+  state.uiSession=state.uiSession||{};
+  state.uiSession.plannerOpen=false;
+  save();
+}
+function confirmShoppingFromPlanner(){
+  const main=state.uiSession?.plannerMain||"",second=state.uiSession?.plannerSecond||"";
+  if(!main)return alert("Bitte mindestens eine Filiale auswählen.");
+  state.store=main;
+  state.compareStore=second===main?"":second;
+  touchRecentStore(state.store);touchRecentStore(state.compareStore);
+  state.shopStage=1;state.shopSequence={};
+  state.uiSession.plannerOpen=false;
+  state.uiSession.screen="shop";
+  state.uiSession.scrollY=0;
+  save();
+  $("#shoppingPlanner").hidden=true;
+  show("shop","Einkauf",{restoreScroll:0});
+  render();
+}
+function startShopping(){openShoppingPlanner()}
+window.addEventListener("pagehide",()=>{
+  state.uiSession=state.uiSession||{};
+  state.uiSession.screen=currentScreen;
+  state.uiSession.scrollY=window.scrollY;
+  save();
+});
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="hidden"){
+    state.uiSession=state.uiSession||{};
+    state.uiSession.screen=currentScreen;
+    state.uiSession.scrollY=window.scrollY;
+    save();
+  }
+});
 function wire(){
-$("#settingsBtn").onclick=()=>show("settings","Einstellungen");$("#startShoppingTopBtn").onclick=startShopping;$("#startShoppingBottomBtn").onclick=startShopping;
+$("#settingsBtn").onclick=()=>show("settings","Einstellungen");$("#startShoppingTopBtn").onclick=startShopping;$("#startShoppingBottomBtn").onclick=startShopping;$("#plannerForwardBtn").onclick=confirmShoppingFromPlanner;$("#plannerBackBtn").onclick=closeShoppingPlanner;$("#plannerStartBtn").onclick=confirmShoppingFromPlanner;$("#plannerMainStore").onchange=()=>{state.uiSession.plannerMain=$("#plannerMainStore").value;if(state.uiSession.plannerSecond===state.uiSession.plannerMain)state.uiSession.plannerSecond="";save();renderShoppingPlanner()};$("#plannerSecondStore").onchange=()=>{state.uiSession.plannerSecond=$("#plannerSecondStore").value===state.uiSession.plannerMain?"":$("#plannerSecondStore").value;save();renderShoppingPlanner()};$("#shoppingPlanner").onclick=e=>{if(e.target.id==="shoppingPlanner")closeShoppingPlanner()};
 $("#editorCloseBtn").onclick=closeItemEditor;
 $("#editorSaveBtn").onclick=saveItemEditor;
 $("#editorDeleteBtn").onclick=()=>{if(!editingItemId)return;state.items=state.items.filter(i=>i.id!==editingItemId);save();closeItemEditor();render();scheduleOffers()};
 $("#itemEditor").onclick=e=>{if(e.target.id==="itemEditor")closeItemEditor()};
-$("#addBtn").onclick=addItems;$("#itemInput").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();addItems()}};document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>show(b.dataset.nav,b.dataset.nav==="list"?"Einkaufsliste":b.dataset.nav==="stores"?"Meine Filialen":"Einstellungen"));document.querySelectorAll(".back").forEach(b=>b.onclick=()=>show(b.dataset.screen,b.dataset.screen==="list"?"Einkaufsliste":"Einkauf planen"));$("#storeSelect").onchange=()=>{state.store=$("#storeSelect").value;if(state.compareStore===state.store)state.compareStore="";save();render();scheduleOffers()};$("#compareStoreSelect").onchange=()=>{const v=$("#compareStoreSelect").value;state.compareStore=v===state.store?"":v;save();render();scheduleOffers()};$("#startBtn").onclick=startShopping;$("#finishBtn").onclick=()=>{const sid=state.shopStage===2&&state.compareStore?state.compareStore:state.store;commitLearning(sid);if(state.shopStage===1&&compareStore()){state.items=state.items.filter(i=>!(i.mode==="once"&&i.checked));state.shopStage=2;save();render();return}state.items=state.items.filter(i=>!(i.mode==="once"&&i.checked));state.shopStage=1;save();render();show("list","Einkaufsliste")};$("#editRouteBtn").onclick=()=>{state.routeEditStore=state.store;editing=[...route(state.store)];renderRouteEditor();show("route","Laufweg anpassen")};$("#editCompareRouteBtn").onclick=()=>{if(!compareStore())return;state.routeEditStore=state.compareStore;editing=[...route(state.compareStore)];renderRouteEditor();show("route","Laufweg anpassen")};$("#saveRouteBtn").onclick=()=>{state.routes[state.routeEditStore]=[...editing];state.routeEditStore="";save();render();show("stores","Filialen")};$("#useLearningBtn").onclick=()=>{if(!state.routeEditStore)return;delete state.routes[state.routeEditStore];editing=[...learnedRoute(state.routeEditStore)];save();renderRouteEditor()};$("#storeSearchBtn").onclick=searchStores;$("#storeSearchInput").oninput=e=>{const r=catalogMatches(e.target.value);const n=renderStoreSearchResults(r);$("#storeSearchState").textContent=`${n} Filialen im Offline-Katalog`};$("#storeSearchInput").onkeydown=e=>{if(e.key==="Enter")searchStores()};const qMain=$("#storeSelectQuick"),qSecond=$("#compareStoreSelectQuick");
+$("#addBtn").onclick=addItems;$("#itemInput").onkeydown=e=>{if(e.key==="Enter"&&(e.metaKey||e.ctrlKey)){e.preventDefault();addItems()}};$("#newGroupBtn").onclick=()=>openGroupEditor();$("#groupEditorCloseBtn").onclick=closeGroupEditor;$("#groupSaveBtn").onclick=saveGroupEditor;$("#groupDeleteBtn").onclick=()=>{if(!editingGroupId)return;if(confirm("Gruppe wirklich löschen?")){state.groups=state.groups.filter(g=>g.id!==editingGroupId);save();closeGroupEditor();renderGroups()}};$("#groupEditor").onclick=e=>{if(e.target.id==="groupEditor")closeGroupEditor()};document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>show(b.dataset.nav,b.dataset.nav==="list"?"Einkaufsliste":b.dataset.nav==="stores"?"Meine Filialen":"Einstellungen"));document.querySelectorAll(".back").forEach(b=>b.onclick=()=>show(b.dataset.screen,b.dataset.screen==="list"?"Einkaufsliste":"Einkauf planen"));$("#storeSelect").onchange=()=>{state.store=$("#storeSelect").value;if(state.compareStore===state.store)state.compareStore="";save();render();scheduleOffers()};$("#compareStoreSelect").onchange=()=>{const v=$("#compareStoreSelect").value;state.compareStore=v===state.store?"":v;save();render();scheduleOffers()};$("#startBtn").onclick=startShopping;$("#finishBtn").onclick=()=>{const sid=state.shopStage===2&&state.compareStore?state.compareStore:state.store;commitLearning(sid);if(state.shopStage===1&&compareStore()){state.items=state.items.filter(i=>!(i.mode==="once"&&i.checked));state.shopStage=2;save();render();return}state.items=state.items.filter(i=>!(i.mode==="once"&&i.checked));state.shopStage=1;save();render();show("list","Einkaufsliste")};$("#editRouteBtn").onclick=()=>{state.routeEditStore=state.store;editing=[...route(state.store)];renderRouteEditor();show("route","Laufweg anpassen")};$("#editCompareRouteBtn").onclick=()=>{if(!compareStore())return;state.routeEditStore=state.compareStore;editing=[...route(state.compareStore)];renderRouteEditor();show("route","Laufweg anpassen")};$("#saveRouteBtn").onclick=()=>{state.routes[state.routeEditStore]=[...editing];state.routeEditStore="";save();render();show("stores","Filialen")};$("#useLearningBtn").onclick=()=>{if(!state.routeEditStore)return;delete state.routes[state.routeEditStore];editing=[...learnedRoute(state.routeEditStore)];save();renderRouteEditor()};$("#storeSearchBtn").onclick=searchStores;$("#storeSearchInput").oninput=e=>{const r=catalogMatches(e.target.value);const n=renderStoreSearchResults(r);$("#storeSearchState").textContent=`${n} Filialen im Offline-Katalog`};$("#storeSearchInput").onkeydown=e=>{if(e.key==="Enter")searchStores()};const qMain=$("#storeSelectQuick"),qSecond=$("#compareStoreSelectQuick");
 if(qMain)qMain.onchange=()=>{state.store=qMain.value;if(state.compareStore===state.store)state.compareStore="";save();render();scheduleOffers()};
 if(qSecond)qSecond.onchange=()=>{state.compareStore=qSecond.value===state.store?"":qSecond.value;save();render();scheduleOffers()};
-const pc=$("#priceCompareToggle");pc.checked=state.settings.priceComparison;pc.onchange=()=>{state.settings.priceComparison=pc.checked;save();render()};$("#resetCategoriesBtn").onclick=()=>{if(!state.store)return;const cur=[...route(state.store)],missing=defaultRoute(state.store).filter(c=>!cur.includes(c));state.hiddenCategories[state.store]=[];state.routes[state.store]=[...cur,...missing];save();render();alert("Fehlende Kategorien wurden unten angehängt.")};$("#resetLearningBtn").onclick=()=>{if(confirm("Automatisch gelernte Laufwege zurücksetzen?")){state.learning={};save();render()}};$("#exportBtn").onclick=()=>{const blob=new Blob([JSON.stringify({version:37,data:state},null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="rethink-einkauf-backup.json";a.click();URL.revokeObjectURL(a.href)};$("#importInput").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const b=JSON.parse(await f.text());if(!b?.data)throw 0;state=migrate(b.data);save();render();alert("Backup erfolgreich wiederhergestellt.")}catch(x){alert("Backup konnte nicht gelesen werden.")}finally{e.target.value=""}}}
-async function updates(){if(!("serviceWorker"in navigator))return;try{const r=await navigator.serviceWorker.register("./sw.js?v=37",{updateViaCache:"none"});await r.update();if(r.waiting){pendingServiceWorker=r.waiting;$("#updateBanner").hidden=false}r.onupdatefound=()=>{const w=r.installing;w.onstatechange=()=>{if(w.state==="installed"&&navigator.serviceWorker.controller){pendingServiceWorker=w;$("#updateBanner").hidden=false}}};$("#updateNowBtn").onclick=()=>pendingServiceWorker?.postMessage({type:"SKIP_WAITING"});navigator.serviceWorker.oncontrollerchange=()=>location.reload()}catch(e){}}wire();show("list","Einkaufsliste");render();updates();scheduleOffers();
+const pc=$("#priceCompareToggle");pc.checked=state.settings.priceComparison;pc.onchange=()=>{state.settings.priceComparison=pc.checked;save();render()};$("#resetCategoriesBtn").onclick=()=>{if(!state.store)return;const cur=[...route(state.store)],missing=defaultRoute(state.store).filter(c=>!cur.includes(c));state.hiddenCategories[state.store]=[];state.routes[state.store]=[...cur,...missing];save();render();alert("Fehlende Kategorien wurden unten angehängt.")};$("#resetLearningBtn").onclick=()=>{if(confirm("Automatisch gelernte Laufwege zurücksetzen?")){state.learning={};save();render()}};$("#exportBtn").onclick=()=>{const blob=new Blob([JSON.stringify({version:41,data:state},null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="rethink-einkauf-backup.json";a.click();URL.revokeObjectURL(a.href)};$("#importInput").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const b=JSON.parse(await f.text());if(!b?.data)throw 0;state=migrate(b.data);save();render();alert("Backup erfolgreich wiederhergestellt.")}catch(x){alert("Backup konnte nicht gelesen werden.")}finally{e.target.value=""}}}
+async function updates(){if(!("serviceWorker"in navigator))return;try{const r=await navigator.serviceWorker.register("./sw.js?v=41",{updateViaCache:"none"});await r.update();if(r.waiting){pendingServiceWorker=r.waiting;$("#updateBanner").hidden=false}r.onupdatefound=()=>{const w=r.installing;w.onstatechange=()=>{if(w.state==="installed"&&navigator.serviceWorker.controller){pendingServiceWorker=w;$("#updateBanner").hidden=false}}};$("#updateNowBtn").onclick=()=>pendingServiceWorker?.postMessage({type:"SKIP_WAITING"});navigator.serviceWorker.oncontrollerchange=()=>location.reload()}catch(e){}}wire();
+render();
+const restored=state.uiSession?.screen||"list";
+const valid=["list","stores","settings","shop","plan","route"];
+const target=valid.includes(restored)?restored:"list";
+const titles={list:"Einkaufsliste",stores:"Filialen",settings:"Einstellungen",shop:"Einkauf",plan:"Einkauf planen",route:"Laufweg anpassen"};
+show(target,titles[target],{noHistory:true,restoreScroll:Number(state.uiSession?.scrollY)||0});
+if(state.uiSession?.plannerOpen)requestAnimationFrame(()=>openShoppingPlanner());
+updates();
+scheduleOffers();
